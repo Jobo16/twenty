@@ -17,7 +17,7 @@ import {
 } from 'twenty-shared/types';
 import { In } from 'typeorm';
 
-import { type PurgeSoftDeletedViewsCommand } from 'src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789564376000-purge-soft-deleted-views.command';
+import { type PurgeSoftDeletedViewsCommand } from 'src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789568204000-purge-soft-deleted-views.command';
 import { ApplicationEntity } from 'src/engine/core-modules/application/application.entity';
 import { ViewFilterGroupEntity } from 'src/engine/metadata-modules/view-filter-group/entities/view-filter-group.entity';
 import { ViewFilterEntity } from 'src/engine/metadata-modules/view-filter/entities/view-filter.entity';
@@ -50,7 +50,7 @@ const findRemainingIds = async (
   return rows.map(({ id }) => id).sort();
 };
 
-describe('2-41 workspace command 1789564376000 - PurgeSoftDeletedViewsCommand (integration)', () => {
+describe('2-41 workspace command 1789568204000 - PurgeSoftDeletedViewsCommand (integration)', () => {
   let command: PurgeSoftDeletedViewsCommand;
   let workspaceOrmManager: WorkspaceOrmManager;
   let objectMetadataId: string;
