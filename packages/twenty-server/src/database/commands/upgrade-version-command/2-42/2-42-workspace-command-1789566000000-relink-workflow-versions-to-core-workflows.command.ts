@@ -64,6 +64,12 @@ export class RelinkWorkflowVersionsToCoreWorkflowsCommand extends ProvisionedWor
         AND (${canonicalParentId}) IS NOT NULL`;
 
     try {
+      if (!(await queryRunner.hasTable(`${schema}.workflow`))) {
+        this.logger.log(`Workflow table absent in workspace ${workspaceId}, skipping relink`);
+
+        return;
+      }
+
       if (
         !(await hasCoreWorkflowWorkspaceWorkflowIdColumn((query) =>
           queryRunner.query(query),
