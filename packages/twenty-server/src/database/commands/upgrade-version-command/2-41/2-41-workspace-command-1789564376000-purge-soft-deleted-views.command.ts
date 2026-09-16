@@ -191,6 +191,9 @@ export class PurgeSoftDeletedViewsCommand extends ProvisionedWorkspaceCommandRun
         { workspaceId },
       );
 
+    // Purged rows can belong to any application; this is only the runner's existence gate and the
+    // builder's dependency-slice anchor, not a scope filter. One bundled build also keeps children
+    // deleted before their view, which one build per application would not guarantee.
     const validateAndBuildResult =
       await this.workspaceMigrationValidateBuildAndRunService.validateBuildAndRunWorkspaceMigration(
         {

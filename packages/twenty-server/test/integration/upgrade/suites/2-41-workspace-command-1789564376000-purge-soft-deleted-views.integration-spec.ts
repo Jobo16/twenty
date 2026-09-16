@@ -18,6 +18,7 @@ import {
 import { In } from 'typeorm';
 
 import { type PurgeSoftDeletedViewsCommand } from 'src/database/commands/upgrade-version-command/2-41/2-41-workspace-command-1789564376000-purge-soft-deleted-views.command';
+import { ApplicationEntity } from 'src/engine/core-modules/application/application.entity';
 import { ViewFilterGroupEntity } from 'src/engine/metadata-modules/view-filter-group/entities/view-filter-group.entity';
 import { ViewFilterEntity } from 'src/engine/metadata-modules/view-filter/entities/view-filter.entity';
 import { ViewSortEntity } from 'src/engine/metadata-modules/view-sort/entities/view-sort.entity';
@@ -26,6 +27,7 @@ import { buildSystemAuthContext } from 'src/engine/twenty-orm/utils/build-system
 import { WorkspaceOrmManager } from 'src/engine/twenty-orm/workspace-orm.manager';
 import { type WorkspaceCacheService } from 'src/engine/workspace-cache/services/workspace-cache.service';
 import { SEED_APPLE_WORKSPACE_ID } from 'src/engine/workspace-manager/dev-seeder/core/constants/seeder-workspaces.constant';
+import { TWENTY_STANDARD_APPLICATION } from 'src/engine/workspace-manager/twenty-standard-application/constants/twenty-standard-applications';
 
 const authContext = buildSystemAuthContext(SEED_APPLE_WORKSPACE_ID);
 
@@ -62,6 +64,7 @@ describe('2-41 workspace command 1789564376000 - PurgeSoftDeletedViewsCommand (i
   let purgedViewFilterId: string;
   let softDeletedViewFilterGroupId: string;
   let softDeletedViewSortId: string;
+  let twentyStandardApplicationId: string;
 
   const runCommand = (options: { dryRun?: boolean } = {}) =>
     workspaceOrmManager.executeInWorkspaceContext(
@@ -213,6 +216,22 @@ describe('2-41 workspace command 1789564376000 - PurgeSoftDeletedViewsCommand (i
 
     lastViewIds = lastViews.map(({ id }) => id).sort();
 
+    const twentyStandardApplication = await getCoreRepository<ApplicationEntity>(
+      ApplicationEntity,
+    ).findOneOrFail({
+      where: {
+        universalIdentifier: TWENTY_STANDARD_APPLICATION.universalIdentifier,
+        workspaceId: SEED_APPLE_WORKSPACE_ID,
+      },
+    });
+
+    twentyStandardApplicationId = twentyStandardApplication.id;
+
+    await getCoreRepository<ViewEntity>(ViewEntity).update(
+      { id: purgedViewId },
+      { applicationId: twentyStandardApplicationId },
+    );
+
     await getCoreRepository<ViewEntity>(ViewEntity).softDelete({
       id: In([purgedViewId, ...lastViewIds]),
     });
@@ -280,7 +299,13 @@ describe('2-41 workspace command 1789564376000 - PurgeSoftDeletedViewsCommand (i
     ).toEqual([softDeletedViewSortId]);
   });
 
-  it('hard-deletes soft-deleted views and children along with the rows under them, skips the last views of an object, and is a no-op on a second run', async () => {
+  it('hard-deletes soft-deleted views and children along with the rows under them, including a view owned by another application, skips the last views of an object, and is a no-op on a second run', async () => {
+    const purgedViewBeforeRun = await getCoreRepository<ViewEntity>(
+      ViewEntity,
+    ).findOneOrFail({ where: { id: purgedViewId }, withDeleted: true });
+
+    expect(purgedViewBeforeRun.applicationId).toBe(twentyStandardApplicationId);
+
     await runCommand();
     await runCommand();
 
