@@ -8,6 +8,8 @@ import { In, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 import { WorkflowEntity } from 'src/engine/core-modules/workflow/entities/workflow.entity';
+import { buildMirroredCoreWorkflowId } from 'src/engine/core-modules/workflow/utils/build-mirrored-core-workflow-id.util';
+import { resolveCoreWorkflowIdsByWorkspaceWorkflowId } from 'src/engine/core-modules/workflow/utils/resolve-core-workflow-ids-by-workspace-workflow-id.util';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { WorkspaceOrmManager } from 'src/engine/twenty-orm/workspace-orm.manager';
 import { InjectWorkspaceScopedRepository } from 'src/engine/twenty-orm/workspace-scoped-repository/inject-workspace-scoped-repository.decorator';
@@ -50,6 +52,18 @@ export class WorkflowCoreSyncService {
         liveWorkflows,
       );
 
+    const reverseMappedCoreWorkflowIdByWorkspaceWorkflowId =
+      await this.resolveReverseMappedCoreWorkflowIds(
+        workspaceId,
+        liveWorkflows.filter(
+          (workflow) =>
+            !isNonEmptyString(workflow.coreWorkflowId) ||
+            !workspaceWorkflowIdByOwnedCoreWorkflowId.has(
+              workflow.coreWorkflowId,
+            ),
+        ),
+      );
+
     const coreVersionIdByWorkspaceVersionId =
       await this.resolveCoreVersionIdByWorkspaceVersionId(
         workspaceId,
@@ -65,11 +79,18 @@ export class WorkflowCoreSyncService {
         isNonEmptyString(candidateCoreWorkflowId) &&
         workspaceWorkflowIdByOwnedCoreWorkflowId.has(candidateCoreWorkflowId)
           ? candidateCoreWorkflowId
-          : null;
+          : (reverseMappedCoreWorkflowIdByWorkspaceWorkflowId.get(
+              workflow.id,
+            ) ?? null);
 
-      const coreWorkflowId = linkedCoreWorkflowId ?? uuidv4();
+      const coreWorkflowId =
+        linkedCoreWorkflowId ??
+        buildMirroredCoreWorkflowId({
+          workspaceId,
+          workspaceWorkflowId: workflow.id,
+        });
 
-      if (!isDefined(linkedCoreWorkflowId)) {
+      if (workflow.coreWorkflowId !== coreWorkflowId) {
         coreWorkflowIdByWorkspaceRecordId.set(workflow.id, coreWorkflowId);
       }
 
@@ -107,6 +128,18 @@ export class WorkflowCoreSyncService {
       workspaceId,
       coreWorkflowIdByWorkspaceRecordId,
     );
+  }
+
+  private async resolveReverseMappedCoreWorkflowIds(
+    workspaceId: string,
+    workflows: WorkflowWorkspaceEntity[],
+  ): Promise<Map<string, string>> {
+    return resolveCoreWorkflowIdsByWorkspaceWorkflowId({
+      executeQuery: (query, parameters) =>
+        this.workspaceRepository.manager.query(query, parameters),
+      workspaceId,
+      workspaceWorkflowIds: workflows.map((workflow) => workflow.id),
+    });
   }
 
   private async resolveCoreVersionIdByWorkspaceVersionId(

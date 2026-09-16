@@ -4,7 +4,7 @@ import { InjectRepository } from '@nestjs/typeorm';
 import { isNonEmptyString } from '@sniptt/guards';
 import { STANDARD_OBJECTS } from 'twenty-shared/metadata';
 import { isDefined, isNonEmptyArray } from 'twenty-shared/utils';
-import { In, Repository } from 'typeorm';
+import { In, IsNull, Repository } from 'typeorm';
 import { v4 as uuidv4 } from 'uuid';
 
 import {
@@ -12,6 +12,9 @@ import {
   WorkflowVersionStatus,
 } from 'src/engine/core-modules/workflow/entities/workflow-version.entity';
 import { RecordPositionService } from 'src/engine/core-modules/record-position/services/record-position.service';
+import { buildMirroredCoreWorkflowId } from 'src/engine/core-modules/workflow/utils/build-mirrored-core-workflow-id.util';
+import { hasCoreWorkflowWorkspaceWorkflowIdColumn } from 'src/engine/core-modules/workflow/utils/has-core-workflow-workspace-workflow-id-column.util';
+import { resolveCoreWorkflowIdsByWorkspaceWorkflowId } from 'src/engine/core-modules/workflow/utils/resolve-core-workflow-ids-by-workspace-workflow-id.util';
 import { WorkspaceEntity } from 'src/engine/core-modules/workspace/workspace.entity';
 import { WorkspaceOrmManager } from 'src/engine/twenty-orm/workspace-orm.manager';
 import { type WorkspaceTransactionScope } from 'src/engine/twenty-orm/types/workspace-transaction-scope.type';
@@ -210,10 +213,13 @@ export class WorkflowVersionCoreSyncService {
     const isNewLink = !isDefined(linkedCoreVersionId);
     const coreWorkflowVersionId = linkedCoreVersionId ?? uuidv4();
 
-    const coreWorkflowId = await this.resolveCoreWorkflowIdInTransaction(
-      workflowVersion.workflowId,
-      transactionScope,
-    );
+    const coreWorkflowId =
+      await this.resolveOrCreateCoreWorkflowIdInTransaction({
+        workspaceId,
+        workflowId: workflowVersion.workflowId,
+        applicationId: resolvedApplicationId,
+        transactionScope,
+      });
 
     // The conflict target is the primary key alone, so without the workspaceId
     // predicate a core row owned by another workspace would have its triggers
@@ -292,13 +298,42 @@ export class WorkflowVersionCoreSyncService {
       }
     }
 
+    const unresolvedWorkflowIds = distinctWorkflowIds.filter(
+      (candidateWorkflowId) =>
+        !coreWorkflowIdByWorkflowId.has(candidateWorkflowId),
+    );
+
+    const reverseMappedCoreWorkflowIds =
+      await resolveCoreWorkflowIdsByWorkspaceWorkflowId({
+        executeQuery: (query, parameters) =>
+          this.workspaceRepository.manager.query(query, parameters),
+        workspaceId,
+        workspaceWorkflowIds: unresolvedWorkflowIds,
+      });
+
+    for (const [
+      workspaceWorkflowId,
+      coreWorkflowId,
+    ] of reverseMappedCoreWorkflowIds) {
+      if (!coreWorkflowIdByWorkflowId.has(workspaceWorkflowId)) {
+        coreWorkflowIdByWorkflowId.set(workspaceWorkflowId, coreWorkflowId);
+      }
+    }
+
     return coreWorkflowIdByWorkflowId;
   }
 
-  private async resolveCoreWorkflowIdInTransaction(
-    workflowId: string,
-    transactionScope: WorkspaceTransactionScope,
-  ): Promise<string | null> {
+  private async resolveOrCreateCoreWorkflowIdInTransaction({
+    workspaceId,
+    workflowId,
+    applicationId,
+    transactionScope,
+  }: {
+    workspaceId: string;
+    workflowId: string;
+    applicationId: string;
+    transactionScope: WorkspaceTransactionScope;
+  }): Promise<string | null> {
     const workflowRepository =
       transactionScope.getRepository<WorkflowWorkspaceEntity>('workflow', {
         shouldBypassPermissionChecks: true,
@@ -309,9 +344,116 @@ export class WorkflowVersionCoreSyncService {
       withDeleted: true,
     });
 
-    const coreWorkflowId = workflow?.coreWorkflowId ?? null;
+    const pointedCoreWorkflowId = workflow?.coreWorkflowId ?? null;
 
-    return isNonEmptyString(coreWorkflowId) ? coreWorkflowId : null;
+    if (isNonEmptyString(pointedCoreWorkflowId)) {
+      return pointedCoreWorkflowId;
+    }
+
+    const isColumnAvailable = await hasCoreWorkflowWorkspaceWorkflowIdColumn(
+      (query) => transactionScope.executeRawQuery(query),
+    );
+
+    if (!isColumnAvailable) {
+      return null;
+    }
+
+    await transactionScope.executeRawQuery(
+      `SELECT pg_advisory_xact_lock(hashtext($1), hashtext($2))`,
+      [workspaceId, workflowId],
+    );
+
+    const reverseRows = (await transactionScope.executeRawQuery(
+      `SELECT "id" FROM core."workflow"
+       WHERE "workspaceId" = $1 AND "workspaceWorkflowId" = $2
+       ORDER BY "createdAt" ASC, "id" ASC
+       LIMIT 1`,
+      [workspaceId, workflowId],
+    )) as { id: string }[];
+
+    const reverseResolvedCoreWorkflowId = reverseRows[0]?.id ?? null;
+
+    if (isNonEmptyString(reverseResolvedCoreWorkflowId)) {
+      if (isDefined(workflow)) {
+        await workflowRepository.update(
+          { id: workflowId, coreWorkflowId: IsNull() },
+          { coreWorkflowId: reverseResolvedCoreWorkflowId },
+        );
+      }
+
+      return reverseResolvedCoreWorkflowId;
+    }
+
+    if (!isDefined(workflow) || isDefined(workflow.deletedAt)) {
+      return null;
+    }
+
+    const createdCoreWorkflowId = buildMirroredCoreWorkflowId({
+      workspaceId,
+      workspaceWorkflowId: workflowId,
+    });
+
+    const lastPublishedVersionId = isNonEmptyString(
+      workflow.lastPublishedVersionId,
+    )
+      ? workflow.lastPublishedVersionId
+      : null;
+
+    const lastPublishedCoreWorkflowVersionId = isDefined(lastPublishedVersionId)
+      ? await this.resolveCoreVersionIdOfWorkspaceVersionInTransaction({
+          workspaceWorkflowVersionId: lastPublishedVersionId,
+          transactionScope,
+        })
+      : null;
+
+    await transactionScope.executeRawQuery(
+      `INSERT INTO core."workflow"
+         ("id", "workspaceId", "name", "workspaceWorkflowId", "lastPublishedVersionId", "lastPublishedCoreWorkflowVersionId", "createdAt", "universalIdentifier", "applicationId")
+       VALUES ($1, $2, $3, $4, $5, $6, $7, $8, $9)
+       ON CONFLICT ("id") DO NOTHING`,
+      [
+        createdCoreWorkflowId,
+        workspaceId,
+        workflow.name ?? null,
+        workflowId,
+        lastPublishedVersionId,
+        lastPublishedCoreWorkflowVersionId,
+        new Date(workflow.createdAt),
+        uuidv4(),
+        applicationId,
+      ],
+    );
+
+    await workflowRepository.update(
+      { id: workflowId, coreWorkflowId: IsNull() },
+      { coreWorkflowId: createdCoreWorkflowId },
+    );
+
+    return createdCoreWorkflowId;
+  }
+
+  private async resolveCoreVersionIdOfWorkspaceVersionInTransaction({
+    workspaceWorkflowVersionId,
+    transactionScope,
+  }: {
+    workspaceWorkflowVersionId: string;
+    transactionScope: WorkspaceTransactionScope;
+  }): Promise<string | null> {
+    const workspaceVersion = await transactionScope
+      .getRepository<WorkflowVersionWorkspaceEntity>('workflowVersion', {
+        shouldBypassPermissionChecks: true,
+      })
+      .findOne({
+        where: { id: workspaceWorkflowVersionId },
+        withDeleted: true,
+      });
+
+    const coreWorkflowVersionId =
+      workspaceVersion?.coreWorkflowVersionId ?? null;
+
+    return isNonEmptyString(coreWorkflowVersionId)
+      ? coreWorkflowVersionId
+      : null;
   }
 
   // Must run inside the caller's transaction so the ownership answer cannot go
