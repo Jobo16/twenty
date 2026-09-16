@@ -603,10 +603,14 @@ export class CoreWorkflowLifecycleWorkspaceService {
     });
 
     const existingCommandMenuItem =
-      await this.commandMenuItemService.findByWorkflowVersionId(
+      (await this.commandMenuItemService.findByCoreWorkflowVersionId(
+        resolved.coreWorkflowVersion.id,
+        workspaceId,
+      )) ??
+      (await this.commandMenuItemService.findByWorkflowVersionId(
         resolved.workspaceWorkflowVersionId,
         workspaceId,
-      );
+      ));
 
     if (isDefined(existingCommandMenuItem)) {
       await this.commandMenuItemService.update(
@@ -653,10 +657,14 @@ export class CoreWorkflowLifecycleWorkspaceService {
     }
 
     const existingCommandMenuItem =
-      await this.commandMenuItemService.findByWorkflowVersionId(
+      (await this.commandMenuItemService.findByCoreWorkflowVersionId(
+        resolved.coreWorkflowVersion.id,
+        workspaceId,
+      )) ??
+      (await this.commandMenuItemService.findByWorkflowVersionId(
         resolved.workspaceWorkflowVersionId,
         workspaceId,
-      );
+      ));
 
     if (isDefined(existingCommandMenuItem)) {
       await this.commandMenuItemService.delete(

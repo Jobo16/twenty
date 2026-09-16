@@ -533,6 +533,28 @@ export class CommandMenuItemService {
     });
   }
 
+  async findByCoreWorkflowVersionId(
+    coreWorkflowVersionId: string,
+    workspaceId: string,
+  ): Promise<CommandMenuItemDTO | null> {
+    const { flatCommandMenuItemMaps } =
+      await this.workspaceManyOrAllFlatEntityMapsCacheService.getOrRecomputeManyOrAllFlatEntityMaps(
+        {
+          workspaceId,
+          flatMapsKeys: ['flatCommandMenuItemMaps'],
+        },
+      );
+    const item = Object.values(
+      flatCommandMenuItemMaps.byUniversalIdentifier,
+    ).find(
+      (commandMenuItem) =>
+        commandMenuItem?.coreWorkflowVersionId === coreWorkflowVersionId,
+    );
+    return isDefined(item)
+      ? fromFlatCommandMenuItemToCommandMenuItemDto(item)
+      : null;
+  }
+
   async findByWorkflowVersionId(
     workflowVersionId: string,
     workspaceId: string,

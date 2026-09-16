@@ -4,6 +4,18 @@ import { useUpdateWorkflowVersionStep } from '@/workflow/workflow-steps/hooks/us
 import { act, renderHook } from '@testing-library/react';
 
 const mockMutate = jest.fn();
+let mockIsCore = false;
+const mockInvalidate = jest.fn();
+jest.mock('@/workflow/hooks/useIsWorkflowCoreEnabled', () => ({
+  useIsWorkflowCoreEnabled: () => mockIsCore,
+}));
+jest.mock(
+  '@/object-core/workflows/versions/utils/invalidateCoreWorkflowVersions',
+  () => ({
+    invalidateCoreWorkflowVersions: (...args: unknown[]) =>
+      mockInvalidate(...args),
+  }),
+);
 const mockGetRecordFromCache = jest.fn();
 const mockMarkStepForRecomputation = jest.fn();
 const mockEnqueueErrorSnackBar = jest.fn();
@@ -56,6 +68,7 @@ const Wrapper = ({ children }: { children: ReactNode }) =>
 describe('useUpdateWorkflowVersionStep', () => {
   beforeEach(() => {
     jest.clearAllMocks();
+    mockIsCore = false;
   });
 
   it('should mark step for recomputation after successful update', async () => {
@@ -136,5 +149,28 @@ describe('useUpdateWorkflowVersionStep', () => {
       stepId: 'step-1',
       workflowVersionId: 'version-1',
     });
+  });
+  it('sends the returned core draft ID and preserves business record IDs in step input', async () => {
+    mockIsCore = true;
+    const step = {
+      id: 'step-1',
+      type: 'UPDATE_RECORD',
+      settings: { input: { objectRecordId: 'business-record-id' } },
+    };
+    mockMutate.mockResolvedValue({ data: { updateWorkflowVersionStep: step } });
+    const { result } = renderHook(() => useUpdateWorkflowVersionStep(), {
+      wrapper: Wrapper,
+    });
+    await act(() =>
+      result.current.updateWorkflowVersionStep({
+        workflowVersionId: 'core-draft-id',
+        step,
+      }),
+    );
+    expect(mockMutate).toHaveBeenCalledWith({
+      variables: { input: { coreWorkflowVersionId: 'core-draft-id', step } },
+    });
+    expect(mockGetRecordFromCache).not.toHaveBeenCalled();
+    expect(mockInvalidate).toHaveBeenCalled();
   });
 });

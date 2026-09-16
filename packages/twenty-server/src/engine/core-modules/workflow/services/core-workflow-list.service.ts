@@ -27,6 +27,7 @@ type CoreWorkflowRow = {
   cursorSortValue: string | null;
   name: string | null;
   lastPublishedVersionId: string | null;
+  lastPublishedCoreWorkflowVersionId: string | null;
   applicationId: string | null;
   workspaceWorkflowId: string | null;
   updatedAt: Date;
@@ -65,7 +66,7 @@ const GROUPED_WORKFLOW_COLUMNS = `c.id, c.name, c."createdAt", c."updatedAt"`;
 
 const CORE_WORKFLOW_AGGREGATE_COLUMNS = `
          c.name,
-         c."lastPublishedVersionId",
+         c."lastPublishedVersionId", c."lastPublishedCoreWorkflowVersionId",
          c."applicationId",
          c."createdAt",
          c."updatedAt",
@@ -82,6 +83,7 @@ const toCoreWorkflowDTO = (row: CoreWorkflowRow): CoreWorkflowDTO => ({
     hasDeactivatedVersion: row.hasDeactivatedVersion,
   }),
   lastPublishedVersionId: row.lastPublishedVersionId,
+  lastPublishedCoreWorkflowVersionId: row.lastPublishedCoreWorkflowVersionId,
   applicationId: row.applicationId,
   workspaceWorkflowId: row.workspaceWorkflowId,
   createdAt: row.createdAt.toISOString(),
@@ -163,7 +165,7 @@ export class CoreWorkflowListService {
        ${buildWorkflowVersionsJoinClause(schemaName)}
        WHERE c."workspaceId" = $1
        ${keysetCondition}
-       GROUP BY ${GROUPED_WORKFLOW_COLUMNS}, c."lastPublishedVersionId", c."applicationId"
+       GROUP BY ${GROUPED_WORKFLOW_COLUMNS}, c."lastPublishedVersionId", c."lastPublishedCoreWorkflowVersionId", c."applicationId"
        ${havingClause}
        ORDER BY ${column} ${direction}${nullsClause}, c.id ${direction}
        LIMIT ${limitParameter}`,
@@ -219,7 +221,7 @@ export class CoreWorkflowListService {
        LEFT JOIN core."workflowVersion" v
          ON v."coreWorkflowId" = c.id AND v."workspaceId" = $1
        WHERE c."workspaceId" = $1 AND c.id = $2
-       GROUP BY ${GROUPED_WORKFLOW_COLUMNS}, c."lastPublishedVersionId", c."applicationId"`,
+       GROUP BY ${GROUPED_WORKFLOW_COLUMNS}, c."lastPublishedVersionId", c."lastPublishedCoreWorkflowVersionId", c."applicationId"`,
       [workspaceId, coreWorkflowId],
     );
 
@@ -271,7 +273,7 @@ export class CoreWorkflowListService {
          ON v."workflowId" = wf.id AND v."workspaceId" = $1
        WHERE c."workspaceId" = $1
          AND ${filterExpression}
-       GROUP BY ${GROUPED_WORKFLOW_COLUMNS}, c."lastPublishedVersionId", c."applicationId"`,
+       GROUP BY ${GROUPED_WORKFLOW_COLUMNS}, c."lastPublishedVersionId", c."lastPublishedCoreWorkflowVersionId", c."applicationId"`,
       [workspaceId, filterParameter],
     );
 

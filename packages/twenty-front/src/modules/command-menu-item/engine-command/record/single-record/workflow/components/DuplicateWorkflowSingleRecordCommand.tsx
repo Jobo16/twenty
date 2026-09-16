@@ -1,3 +1,4 @@
+import { useIsWorkflowCoreEnabled } from '@/workflow/hooks/useIsWorkflowCoreEnabled';
 import { HeadlessEngineCommandWrapperEffect } from '@/command-menu-item/engine-command/components/HeadlessEngineCommandWrapperEffect';
 import { useHeadlessCommandContextApi } from '@/command-menu-item/engine-command/hooks/useHeadlessCommandContextApi';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
@@ -15,6 +16,7 @@ export const DuplicateWorkflowSingleRecordCommand = () => {
   const recordId = selectedRecords[0]?.id;
   const workflow = useWorkflowWithCurrentVersion(recordId ?? '');
   const { duplicateWorkflow } = useDuplicateWorkflow();
+  const isCore = useIsWorkflowCoreEnabled();
   const navigate = useNavigateApp();
   const { enqueueSuccessSnackBar, enqueueErrorSnackBar } = useSnackBar();
   const { t } = useLingui();
@@ -38,6 +40,12 @@ export const DuplicateWorkflowSingleRecordCommand = () => {
         message: t`Workflow duplicated successfully`,
       });
 
+      if (isCore) {
+        navigate(AppPath.WorkflowCoreShowPage, {
+          coreWorkflowId: result.workflowId,
+        });
+        return;
+      }
       navigate(AppPath.RecordShowPage, {
         objectNameSingular: CoreObjectNameSingular.Workflow,
         objectRecordId: result.workflowId,

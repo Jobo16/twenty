@@ -1,9 +1,8 @@
+import { invalidateCoreWorkflowVersions } from '@/object-core/workflows/versions/utils/invalidateCoreWorkflowVersions';
 import { useMutation } from '@apollo/client/react';
 import { t } from '@lingui/core/macro';
 import { isNonEmptyArray } from 'twenty-shared/utils';
 
-import { dispatchObjectRecordOperationBrowserEvent } from '@/browser-event/utils/dispatchObjectRecordOperationBrowserEvent';
-import { useRemoveNavigationMenuItemByTargetRecordId } from '@/navigation-menu-item/common/hooks/useRemoveNavigationMenuItemByTargetRecordId';
 import { DELETE_CORE_WORKFLOWS } from '@/object-core/workflows/graphql/mutations/deleteCoreWorkflows';
 import { coreWorkflowsFilterSettingsState } from '@/object-core/workflows/states/coreWorkflowsFilterSettingsState';
 import {
@@ -12,8 +11,6 @@ import {
 } from '@/object-core/workflows/states/coreWorkflowsSelectionState';
 import { getSelectedCoreWorkflowRowIds } from '@/object-core/workflows/utils/getSelectedCoreWorkflowRowIds';
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
-import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
-import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { useSnackBar } from '@/ui/feedback/snack-bar-manager/hooks/useSnackBar';
 import { useAtomStateValue } from '@/ui/utilities/state/jotai/hooks/useAtomStateValue';
 import { useSetAtomState } from '@/ui/utilities/state/jotai/hooks/useSetAtomState';
@@ -26,10 +23,6 @@ import { logError } from '~/utils/logError';
 export const useDeleteSelectedCoreWorkflows = () => {
   const apolloCoreClient = useApolloCoreClient();
 
-  const { objectMetadataItem } = useObjectMetadataItem({
-    objectNameSingular: CoreObjectNameSingular.Workflow,
-  });
-
   const coreWorkflowsSelection = useAtomStateValue(coreWorkflowsSelectionState);
   const setCoreWorkflowsSelection = useSetAtomState(
     coreWorkflowsSelectionState,
@@ -38,9 +31,6 @@ export const useDeleteSelectedCoreWorkflows = () => {
   const coreWorkflowsFilterSettings = useAtomStateValue(
     coreWorkflowsFilterSettingsState,
   );
-
-  const { removeNavigationMenuItemsByTargetRecordIds } =
-    useRemoveNavigationMenuItemByTargetRecordId();
 
   const { enqueueErrorSnackBar } = useSnackBar();
 
@@ -59,15 +49,15 @@ export const useDeleteSelectedCoreWorkflows = () => {
       return;
     }
 
-    let deletedWorkspaceWorkflowIds: string[];
+    let deletedCoreWorkflowIds: string[];
 
     try {
       const { data } = await deleteCoreWorkflowsMutation({
         variables: { input: { coreWorkflowIds: selectedCoreWorkflowIds } },
       });
 
-      deletedWorkspaceWorkflowIds = (data?.deleteCoreWorkflows ?? []).map(
-        (deletedCoreWorkflow) => deletedCoreWorkflow.workspaceWorkflowId,
+      deletedCoreWorkflowIds = (data?.deleteCoreWorkflows ?? []).map(
+        (deletedCoreWorkflow) => deletedCoreWorkflow.id,
       );
     } catch (error) {
       logError(error);
@@ -76,7 +66,7 @@ export const useDeleteSelectedCoreWorkflows = () => {
       return;
     }
 
-    if (!isNonEmptyArray(deletedWorkspaceWorkflowIds)) {
+    if (!isNonEmptyArray(deletedCoreWorkflowIds)) {
       enqueueErrorSnackBar({ message: t`No workflows were deleted` });
 
       return;
@@ -84,15 +74,15 @@ export const useDeleteSelectedCoreWorkflows = () => {
 
     setCoreWorkflowsSelection(EMPTY_CORE_WORKFLOWS_SELECTION);
 
-    removeNavigationMenuItemsByTargetRecordIds(deletedWorkspaceWorkflowIds);
-
-    dispatchObjectRecordOperationBrowserEvent({
-      objectMetadataItem,
-      operation: {
-        type: 'delete-many',
-        deletedRecordIds: deletedWorkspaceWorkflowIds,
-      },
-    });
+    for (const coreWorkflowId of deletedCoreWorkflowIds) {
+      apolloCoreClient.cache.evict({
+        id: apolloCoreClient.cache.identify({
+          __typename: 'CoreWorkflowDTO',
+          id: coreWorkflowId,
+        }),
+      });
+    }
+    await invalidateCoreWorkflowVersions(apolloCoreClient);
   };
 
   return { deleteSelectedCoreWorkflows, selectedCoreWorkflowIds };

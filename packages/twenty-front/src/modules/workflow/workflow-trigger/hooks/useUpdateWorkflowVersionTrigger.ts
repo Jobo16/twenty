@@ -1,3 +1,10 @@
+import { useIsWorkflowCoreEnabled } from '@/workflow/hooks/useIsWorkflowCoreEnabled';
+import { invalidateCoreWorkflowVersions } from '@/object-core/workflows/versions/utils/invalidateCoreWorkflowVersions';
+import {
+  UpdateCoreWorkflowVersionTriggerDocument,
+  type UpdateWorkflowVersionTriggerMutation,
+  type UpdateWorkflowVersionTriggerMutationVariables,
+} from '~/generated/graphql';
 import { useApolloCoreClient } from '@/object-metadata/hooks/useApolloCoreClient';
 import { useObjectMetadataItem } from '@/object-metadata/hooks/useObjectMetadataItem';
 import { useObjectMetadataItems } from '@/object-metadata/hooks/useObjectMetadataItems';
@@ -18,13 +25,13 @@ import { useMutation } from '@apollo/client/react';
 import { CoreObjectNameSingular } from 'twenty-shared/types';
 import { isDefined } from 'twenty-shared/utils';
 import { TRIGGER_STEP_ID } from 'twenty-shared/workflow';
-import {
-  type UpdateWorkflowVersionTriggerMutation,
-  type UpdateWorkflowVersionTriggerMutationVariables,
-} from '~/generated/graphql';
 
 export const useUpdateWorkflowVersionTrigger = (instanceId?: string) => {
   const apolloCoreClient = useApolloCoreClient();
+  const isCore = useIsWorkflowCoreEnabled();
+  const [mutateCore] = useMutation(UpdateCoreWorkflowVersionTriggerDocument, {
+    client: apolloCoreClient,
+  });
   const { objectMetadataItems } = useObjectMetadataItems();
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
   const { enqueueErrorSnackBar } = useSnackBar();
@@ -53,17 +60,26 @@ export const useUpdateWorkflowVersionTrigger = (instanceId?: string) => {
   const updateTrigger = async (updatedTrigger: WorkflowTrigger) => {
     const workflowVersionId = await getUpdatableWorkflowVersion();
 
-    const { data } = await mutate({
-      variables: {
-        input: {
-          workflowVersionId,
-          trigger: updatedTrigger,
-        },
-      },
-      onError: (error) => {
-        enqueueErrorSnackBar({ apolloError: error });
-      },
-    });
+    const { data } = isCore
+      ? await mutateCore({
+          variables: {
+            input: {
+              coreWorkflowVersionId: workflowVersionId,
+              trigger: updatedTrigger,
+            },
+          },
+        })
+      : await mutate({
+          variables: {
+            input: {
+              workflowVersionId,
+              trigger: updatedTrigger,
+            },
+          },
+          onError: (error) => {
+            enqueueErrorSnackBar({ apolloError: error });
+          },
+        });
 
     if (!isDefined(data?.updateWorkflowVersionTrigger)) {
       return;
@@ -81,6 +97,11 @@ export const useUpdateWorkflowVersionTrigger = (instanceId?: string) => {
 
       return { ...currentFlow, workflowVersionId, trigger: updatedTrigger };
     });
+
+    if (isCore) {
+      await invalidateCoreWorkflowVersions(apolloCoreClient);
+      return;
+    }
 
     const cachedRecord = getRecordFromCache<WorkflowVersion>(workflowVersionId);
     if (!isDefined(cachedRecord)) {
