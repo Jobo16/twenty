@@ -245,6 +245,17 @@ export class CoreWorkflowLifecycleWorkspaceService {
             coreWorkflow.lastPublishedCoreWorkflowVersionId !==
             coreWorkflowVersion.id
           ) {
+            await transactionScope
+              .getRepository<WorkflowWorkspaceEntity>('workflow', {
+                shouldBypassPermissionChecks: true,
+              })
+              .update(
+                { id: resolved.workspaceWorkflowId },
+                {
+                  lastPublishedVersionId: resolved.workspaceWorkflowVersionId,
+                },
+              );
+
             await transactionScope.executeRawQuery(
               `UPDATE core."workflow"
                SET "lastPublishedCoreWorkflowVersionId" = $3, "lastPublishedVersionId" = $4, "updatedAt" = now()
@@ -256,17 +267,6 @@ export class CoreWorkflowLifecycleWorkspaceService {
                 resolved.workspaceWorkflowVersionId,
               ],
             );
-
-            await transactionScope
-              .getRepository<WorkflowWorkspaceEntity>('workflow', {
-                shouldBypassPermissionChecks: true,
-              })
-              .update(
-                { id: resolved.workspaceWorkflowId },
-                {
-                  lastPublishedVersionId: resolved.workspaceWorkflowVersionId,
-                },
-              );
           }
 
           await this.writeVersionStatusInTransaction({
