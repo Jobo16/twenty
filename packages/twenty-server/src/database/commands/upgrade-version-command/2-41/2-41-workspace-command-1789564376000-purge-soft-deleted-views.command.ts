@@ -12,7 +12,7 @@ import { WorkspaceCacheService } from 'src/engine/workspace-cache/services/works
 import { WorkspaceMigrationBuilderException } from 'src/engine/workspace-manager/workspace-migration/exceptions/workspace-migration-builder-exception';
 import { WorkspaceMigrationValidateBuildAndRunService } from 'src/engine/workspace-manager/workspace-migration/services/workspace-migration-validate-build-and-run-service';
 
-@RegisteredWorkspaceCommand('2.41.0', 1789485621000)
+@RegisteredWorkspaceCommand('2.41.0', 1789564376000)
 @Command({
   name: 'upgrade:2-41:purge-soft-deleted-views',
   description:
