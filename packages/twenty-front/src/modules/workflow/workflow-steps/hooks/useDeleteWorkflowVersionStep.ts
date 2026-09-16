@@ -1,3 +1,4 @@
+import { useWorkflowEditorMutationErrorHandler } from '@/workflow/hooks/useWorkflowEditorMutationErrorHandler';
 import { useIsWorkflowCoreEnabled } from '@/workflow/hooks/useIsWorkflowCoreEnabled';
 import { invalidateCoreWorkflowVersions } from '@/object-core/workflows/versions/utils/invalidateCoreWorkflowVersions';
 import {
@@ -17,8 +18,10 @@ import { useMutation } from '@apollo/client/react';
 export const useDeleteWorkflowVersionStep = () => {
   const apolloCoreClient = useApolloCoreClient();
   const isCore = useIsWorkflowCoreEnabled();
+  const handleCoreMutationError = useWorkflowEditorMutationErrorHandler();
   const [mutateCore] = useMutation(DeleteCoreWorkflowVersionStepDocument, {
     client: apolloCoreClient,
+    onError: handleCoreMutationError,
   });
 
   const { applyWorkflowVersionStepChanges } =

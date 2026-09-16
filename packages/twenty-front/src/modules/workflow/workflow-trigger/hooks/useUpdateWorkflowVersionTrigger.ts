@@ -1,3 +1,4 @@
+import { useWorkflowEditorMutationErrorHandler } from '@/workflow/hooks/useWorkflowEditorMutationErrorHandler';
 import { useIsWorkflowCoreEnabled } from '@/workflow/hooks/useIsWorkflowCoreEnabled';
 import { invalidateCoreWorkflowVersions } from '@/object-core/workflows/versions/utils/invalidateCoreWorkflowVersions';
 import {
@@ -29,8 +30,11 @@ import { TRIGGER_STEP_ID } from 'twenty-shared/workflow';
 export const useUpdateWorkflowVersionTrigger = (instanceId?: string) => {
   const apolloCoreClient = useApolloCoreClient();
   const isCore = useIsWorkflowCoreEnabled();
+  const handleCoreMutationError =
+    useWorkflowEditorMutationErrorHandler(instanceId);
   const [mutateCore] = useMutation(UpdateCoreWorkflowVersionTriggerDocument, {
     client: apolloCoreClient,
+    onError: handleCoreMutationError,
   });
   const { objectMetadataItems } = useObjectMetadataItems();
   const { objectPermissionsByObjectMetadataId } = useObjectPermissions();
