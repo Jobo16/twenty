@@ -167,10 +167,13 @@ describe('2-41 workspace command 1789564376000 - PurgeSoftDeletedViewsCommand (i
 
     softDeletedViewFilterGroupId = viewFilterGroup.id;
 
-    const createViewFilter = async (
-      viewId: string,
-      viewFilterGroupId?: string,
-    ) => {
+    const createViewFilter = async ({
+      viewId,
+      viewFilterGroupId,
+    }: {
+      viewId: string;
+      viewFilterGroupId?: string;
+    }) => {
       const {
         data: { createViewFilter: viewFilter },
       } = await createOneViewFilter({
@@ -187,13 +190,13 @@ describe('2-41 workspace command 1789564376000 - PurgeSoftDeletedViewsCommand (i
       return viewFilter.id;
     };
 
-    keptViewFilterId = await createViewFilter(keptViewId);
-    softDeletedViewFilterId = await createViewFilter(keptViewId);
-    nestedViewFilterId = await createViewFilter(
-      keptViewId,
-      softDeletedViewFilterGroupId,
-    );
-    purgedViewFilterId = await createViewFilter(purgedViewId);
+    keptViewFilterId = await createViewFilter({ viewId: keptViewId });
+    softDeletedViewFilterId = await createViewFilter({ viewId: keptViewId });
+    nestedViewFilterId = await createViewFilter({
+      viewId: keptViewId,
+      viewFilterGroupId: softDeletedViewFilterGroupId,
+    });
+    purgedViewFilterId = await createViewFilter({ viewId: purgedViewId });
 
     const {
       data: { createViewSort: viewSort },
