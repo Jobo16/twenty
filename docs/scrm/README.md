@@ -32,6 +32,10 @@
 - [目标架构与模块地图](architecture.md)
 - [开发待办与优先级](backlog.md)
 - [上游代码使用策略](upstream-policy.md)
-- [Agent 分发任务 Prompt](agent-prompts.md)
+- [Agent 领取 Issue 的统一提示词](agent-issue-prompt.md)
 - [开发规范](development-standards.md)
 - [任务看板与可分发 Prompt](task-management.md)
+- [仓库运行方式](repository-operations.md)
+
+`agent-prompts.md` 保留早期任务拆分记录，仅供追溯；实际分发以任务看板、GitHub Issue 和
+统一提示词为准。

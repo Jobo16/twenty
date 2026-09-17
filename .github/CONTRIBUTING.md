@@ -1,66 +1,35 @@
-# Contributing to Twenty
+# 参与 SCRM 开发
 
-Thanks for considering contributing to Twenty!
+本仓库以清晰的 SCRM 边界和可审查交付为目标。开始前先阅读根目录
+[README](../README.md)、[本地开发说明](../docs/scrm/local-development.md)和
+[开发规范](../docs/scrm/development-standards.md)。
 
-Please make sure to go through the [documentation](https://docs.twenty.com) before.
+## 领取工作
 
-<br>
+只领取带有 `scrm` 和 `agent:ready` 标签的 Issue。将
+[统一 Agent 提示词](../docs/scrm/agent-issue-prompt.md)中的 Issue 编号替换后发送给
+Agent；提示词规定了认领、分支、验证和 Draft PR 的全部步骤。
 
+认领成功的标志是 Issue 上最早的有效认领留言与 `agent:claimed` 标签。若 Issue 已被
+认领、基线不是最新 `main`，或范围依赖未合入的 PR，停止实施并交回 SCRM 负责人处理。
 
-## Good first issues
+## 开发与提交
 
-Good first issues are a great way to start contributing and get familiar with the codebase. You can find them on by filtering on the [good first issue](https://github.com/twentyhq/twenty/labels/good%20first%20issue) label.
+- 从 Issue 指定的 `origin/main` 提交创建独立 worktree 和分支。
+- 只改动 Issue 允许的目录；公共出口、根配置、迁移和共享测试夹具只能由专门的集成
+  Issue 修改。
+- 遵循租户隔离、历史事实、企微回调和隐私规则；不要将密钥、客户数据或生产数据写入
+  仓库。
+- 运行 Issue 指定的验证命令以及 `git diff --check <base>...HEAD`。
+- 提交 Draft PR，正文写明关联 Issue、行为变化、修改文件、验证、数据库与配置影响、
+  未覆盖风险。不要自行合入或关闭 Issue。
 
-## Issue assignment
+## 审查
 
-To avoid conflicts, we follow these guidelines:
+SCRM 负责人审查范围、验证结果和与其他任务的边界，并负责将合格 PR 合入 `main`。
+已合入的基线才可以成为下一批并行任务的依赖。
 
-1. For `Good First Issue` and `Experienced Contributor` issues without `size: long` labels, we'll merge the first PRs that meet our [code quality standards](https://docs.twenty.com/developers). **We don't assign contributors to these issues**. For `priority: high` issues, our core team will step in within days if no adequate contributions are received.
-2. For `size: long` Issues, assigned contributors have one week to submit their first draft PR.
+## 安全与许可
 
-## How to Contribute
-
-1. **Fork the Repository:** Click on the 'Fork' button in the upper right corner of the repository's GitHub page. This will create a copy of the repository in your GitHub account.
-
-2. **Clone the Repository:** Clone your forked repository to your local machine using `git clone`.
-
-```shell
-git clone https://github.com/yourusername/twenty.git
-cd twenty
-```
-
-3. **Create a New Branch:** Create a new branch for your changes instead of using the main branch.
-
-```shell
-git checkout -b your-branch-name
-```
-
-4. **Make Changes:** Make your desired changes and ensure that your code adheres to Twenty's coding standards.
-
-
-5. **Test Locally:** Test your changes locally to ensure they work as expected.
-
-
-6. **Commit Changes:** Commit your changes with a clear and concise commit message.
-
-```shell
-git commit -m "Add your detailed description here"
-```
-
-7. **Push Changes:** Push your changes to your forked repository.
-
-```shell
-git push origin your-branch-name
-```
-
-8. **Create a Pull Request:** Go to the original Twenty repository and create a pull request. Please provide a detailed description of your changes. Submitting a PR means you agree to the CLA.
-
-9. **Code Review:** Your pull request will undergo a code review.
-
-10. **Merge:** Once approved, maintainers will merge your pull request into the main repository.
-
-
-
-## Reporting Issues
-
-If you face any issues or have suggestions, please feel free to [create an issue on Twenty's GitHub repository](https://github.com/twentyhq/twenty/issues/new). Please provide as much detail as possible.
+安全漏洞不要公开提交 Issue，按[安全策略](SECURITY.md)报告。提交代码即表示你确认有权
+提交该内容，并同意其按仓库适用许可提供；更多说明见[贡献条款](CLA.md)。

@@ -11,6 +11,10 @@ For all new or changed SCRM functionality, read and follow
 It defines the required module boundaries, tenant isolation, historical fact
 rules, WeCom callback handling, tests, and reviewable delivery workflow.
 
+For repository-wide documentation, issue/PR workflow, automation boundaries,
+and GitHub configuration, also read
+[`docs/scrm/repository-operations.md`](docs/scrm/repository-operations.md).
+
 In particular: keep `packages/scrm-domain` free of framework, database, HTTP,
 and WeCom SDK dependencies; derive tenant and authorization server-side; and
 never recalculate historical reports from mutable current customer fields.

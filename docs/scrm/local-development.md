@@ -44,7 +44,8 @@
 - **P5**：管理看板、漏斗与稳定报表事实。
 - **P6**：会话存档、隐私与 AI 证据边界。
 
-每项都已有对应的父 Issue 和 [可分发任务 Prompt](agent-prompts.md)。
+完整的父 Issue 可在[开发待办](backlog.md)中查看。只有任务看板标记为当前可分发的工作才会
+创建 `agent:ready` Issue；领取方式见[统一 Agent 提示词](agent-issue-prompt.md)。
 
 ## 本地开发前提条件
 

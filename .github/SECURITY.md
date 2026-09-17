@@ -1,31 +1,13 @@
-# Security Policy
+# 安全策略
 
-## Reporting a Vulnerability
+不要通过公开 Issue、PR、日志或截图披露漏洞、企业微信凭据、访问令牌、客户内容、手机号
+或生产数据。
 
-Reporting any potential vulnerabilities is strongly encouraged.
+请使用仓库启用的 GitHub 私密漏洞报告功能提交安全问题。报告应说明受影响的版本或提交、
+复现条件、影响范围和可行的缓解方案；仅提供最小化、脱敏后的复现材料。
 
-If you suspect a vulnerability, please take the following steps:
-- Contact the team at `security at twenty.com`.
-- Include a comprehensive description of the potential vulnerability and steps to reproduce the issue, if possible. The more information you can provide, the quicker Twenty can address the problem.
+维护者会确认报告并在私密渠道中协调修复。未经维护者同意，请不要利用漏洞或公开细节。
+普通产品建议和非敏感缺陷使用公开 Issue 模板提交。
 
-You can expect a response to your initial report within one business day.
-While the core team works on addressing the issue, please maintain confidentiality about the vulnerability to ensure the security of all users.
-Please refrain from exploiting the vulnerability or revealing the problem to others.
-
-While Twenty doesn't have a formal bug bounty program right now due to the project's nascent stage, rest assured that:
-
-- You will get a response within one business day.
-- Your report and all accompanying data will receive the highest level of confidentiality.
-- Your contribution is greatly appreciated, and Twenty would acknowledge your role in the vulnerability fix, if you opt for identification.
-- Twenty will grant you permission to publicly discuss your findings once users have had a reasonable time to apply the patch after it becomes available.
-- Twenty guarantees not to pursue any legal action as long as the vulnerability is not exploited.
-
-## Security Features
-Efforts are continually made to enhance the security of the product.
-If you have any recommendations or feature request that could enhance the product's security, please share them via the discussion forum.
-
-⚠️ Note this does not apply to security vulnerabilities. If you're in doubt, then always follow the security vulnerability process
-
-
-
-
+安全审查覆盖 SCRM 的租户隔离、权限、企微回调验签与解密、会话存档、AI 证据访问、
+依赖供应链和部署配置。

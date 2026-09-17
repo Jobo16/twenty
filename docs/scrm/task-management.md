@@ -8,15 +8,16 @@
 
 | 编号 | 状态 | 负责人 | 交付 |
 | --- | --- | --- | --- |
-| T01 | 待验收 | Codex | [P0 PR #11](https://github.com/Jobo16/twenty/pull/11)，SCRM CI 已通过 |
+| T01 | 验证中 | Codex | [P0 PR #11](https://github.com/Jobo16/twenty/pull/11)，最新 SCRM CI 运行中 |
 
 当前没有可再分配给 Agent 的任务。P0 进入 `main` 后，我会基于新的稳定基线创建下一批互不影响的 GitHub Issue。
 
-## T01：修复 P0 基建并让 CI 成为可信门槛
+## T01：建立 P0 产品基线与仓库运行入口
 
-**负责人：Codex。状态：待验收。** 已更新现有 `scrm/issue-1-product-shell` 分支和 PR #11，不新建重复 P0 PR。
+**负责人：Codex。状态：验证中。** 已更新现有 `scrm/issue-1-product-shell` 分支和 PR #11，不新建重复 P0 PR。
 
-范围：补齐 `scrm-domain` 的 Yarn workspace 锁文件、领域包 lint 配置、原生 Jest/Nx 验证、类型检查兼容性、Markdown 格式，以及本任务看板入口。
+范围：补齐 `scrm-domain` 的 Yarn workspace 锁文件、领域包 lint 配置、原生 Jest/Nx 验证、类型检查兼容性与格式；建立项目根 README、贡献与安全入口、代码所有者、Issue/PR 模板、
+仓库运行文档；移除会调用上游 Twenty 基础设施的继承自动化，避免本项目的 PR 和 main CI 产生无效失败。
 
 验收命令：
 
@@ -28,7 +29,7 @@ yarn nx run scrm-domain:lint
 git diff --check origin/main...HEAD
 ```
 
-实际验证：GitHub [CI SCRM Domain](https://github.com/Jobo16/twenty/actions/runs/35185886381) 已通过依赖安装、类型检查、测试和 lint。
+此前 GitHub [CI SCRM Domain](https://github.com/Jobo16/twenty/actions/runs/35185886381) 已通过依赖安装、类型检查、测试和 lint；本次扩展后以 PR #11 最新 CI 为准。
 
 ## 分发规则
 
