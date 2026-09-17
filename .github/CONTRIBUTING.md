@@ -4,6 +4,9 @@
 [README](../README.md)、[本地开发说明](../docs/scrm/local-development.md)和
 [开发规范](../docs/scrm/development-standards.md)。
 
+本文适用于受委派的 Agent 与外部贡献者。仓库负责人或 Codex 自行实施的改动，经必要验证后直接提交并推送
+到 `main`；Issue 认领和 Draft PR 是委派交付的流程。
+
 ## 领取工作
 
 只领取带有 `scrm` 和 `agent:ready` 标签的 Issue。将

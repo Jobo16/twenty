@@ -19,6 +19,15 @@ In particular: keep `packages/scrm-domain` free of framework, database, HTTP,
 and WeCom SDK dependencies; derive tenant and authorization server-side; and
 never recalculate historical reports from mutable current customer fields.
 
+## SCRM delivery ownership
+
+- The repository owner, including Codex when it implements a change directly,
+  validates, commits, and pushes the change straight to `main`. Do not create
+  an Issue or PR merely to review the owner's own work.
+- Work delegated to another Agent uses the Issue claim and Draft PR workflow
+  in `docs/scrm/agent-issue-prompt.md`. The owner reviews and integrates that
+  work after it is delivered.
+
 ## House rules
 
 Where this repo differs from your defaults:

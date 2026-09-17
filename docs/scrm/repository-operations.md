@@ -9,6 +9,7 @@
 | ---------------- | --------------------------------------------------------------------------------------- | ---------------------------------- |
 | 产品与技术负责人 | [架构](architecture.md)、[开发待办](backlog.md)                                         | 边界、优先级和验收口径             |
 | 开发者           | [本地开发说明](local-development.md)、[开发规范](development-standards.md)              | 实现、验证和数据安全               |
+| 仓库负责人 / Codex | 本文、[开发规范](development-standards.md)                                             | 自行实施后直接提交并推送 `main`    |
 | Agent            | [任务看板](task-management.md)、[统一提示词](agent-issue-prompt.md)                     | 认领一个独立 Issue 并交付 Draft PR |
 | 审查者           | [PR 模板](../../.github/PULL_REQUEST_TEMPLATE.md)、[开发规范](development-standards.md) | 范围、测试、租户与隐私审查         |
 | 安全报告人       | [安全策略](../../.github/SECURITY.md)                                                   | 私密报告，不公开敏感材料           |
@@ -18,10 +19,11 @@
 
 ## 任务与审查
 
-1. SCRM 负责人只发布基于已合入 `main`、可独立实施的 Issue，并添加 `scrm`、`agent:ready`。
-2. Agent 按统一提示词认领，留下可追溯的认领留言，并将标签改为 `agent:claimed`。
-3. Agent 在独立分支提交 Draft PR；PR 使用仓库模板说明范围、验证和影响。
-4. 负责人审查后将标签改为 `agent:review`、`agent:blocked` 或关闭/合入关联 Issue。
+1. SCRM 负责人或 Codex 自行实施时，先完成必要验证，再直接提交并推送到 `main`；这条路径不创建
+   Issue 或 PR。
+2. 仅分配给其他 Agent 的工作才发布为基于已合入 `main`、可独立实施的 Issue，并添加 `scrm`、`agent:ready`。
+3. Agent 按统一提示词认领，留下可追溯的认领留言，并将标签改为 `agent:claimed`，然后在独立分支提交 Draft PR。
+4. 负责人审查 Agent PR 后将标签改为 `agent:review`、`agent:blocked` 或关闭/合入关联 Issue。
 
 `agent:claimed` 是协作锁，不是 GitHub 的“锁定会话”功能；后者会阻止必要的讨论。
 
@@ -38,7 +40,8 @@
 
 代码中的 `CODEOWNERS` 仅声明审查归属。仓库管理员还应在 GitHub 设置中完成：
 
-- 为 `main` 启用分支保护：禁止直接推送、要求 PR、禁止强制推送和删除。
+- 将 `main` 的更新权限限制在仓库负责人和受控自动化；禁止强制推送和删除。负责人自行实施的改动可直接提交，
+  其他 Agent 的改动必须经 PR 审查。
 - 当稳定的必需检查确定后，要求对应检查通过；当前至少保留 SCRM 域的类型检查、测试和 lint。
 - 启用私密漏洞报告和秘密扫描推送保护。
 - 在有正式部署链路前，不配置自动发布、上游跨仓库分发或生产凭据。
