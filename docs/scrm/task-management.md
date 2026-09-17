@@ -6,13 +6,13 @@
 
 | 编号 | 状态 | 负责人 | 交付 |
 | --- | --- | --- | --- |
-| T01 | 进行中 | Codex | 更新 [P0 PR #11](https://github.com/Jobo16/twenty/pull/11) |
+| T01 | 待验收 | Codex | [P0 PR #11](https://github.com/Jobo16/twenty/pull/11)，SCRM CI 已通过 |
 
 当前没有可再分配给 Agent 的任务。P0 进入 `main` 后，我会基于新的稳定基线生成下一批互不影响的任务和 Prompt。
 
 ## T01：修复 P0 基建并让 CI 成为可信门槛
 
-**负责人：Codex。** 更新现有 `scrm/issue-1-product-shell` 分支和 PR #11，不新建重复 P0 PR。
+**负责人：Codex。状态：待验收。** 已更新现有 `scrm/issue-1-product-shell` 分支和 PR #11，不新建重复 P0 PR。
 
 范围：补齐 `scrm-domain` 的 Yarn workspace 锁文件、领域包 lint 配置、原生 Jest/Nx 验证、类型检查兼容性、Markdown 格式，以及本任务看板入口。
 
@@ -25,6 +25,8 @@ yarn nx run scrm-domain:test
 yarn nx run scrm-domain:lint
 git diff --check origin/main...HEAD
 ```
+
+实际验证：GitHub [CI SCRM Domain](https://github.com/Jobo16/twenty/actions/runs/35185886381) 已通过依赖安装、类型检查、测试和 lint。
 
 ## 分发规则
 
