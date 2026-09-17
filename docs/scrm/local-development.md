@@ -51,10 +51,18 @@
 
 | 依赖 | 要求 | 失败时会怎样 |
 | --- | --- | --- |
-| Docker | 已安装并在运行 | `scripts/scrm/setup-local.sh` 立即报错 "Docker is required." |
-| Node.js | **24**（精确主版本） | 脚本报错 "Node.js 24 is required; found …" |
-| Yarn 4 | 仓库自带的 `.yarn/releases/yarn-4.13.0.cjs` | 不需要全局安装 |
-| 网络 | 能访问 npm registry 与 `registry.npmjs.org` | `yarn install` 失败时需检查代理 / 镜像 |
+| Docker | 已安装并在运行，只用于本机基础设施 | `./scripts/scrm/compose` 报错 "Docker is required." |
+| Node.js | 以仓库根 `.nvmrc` 为准（当前 `24.16.0`） | `scrm:setup` 报错 "Node.js 24 is required; found …" |
+| Yarn 4 | 仓库自带的 `.yarn/releases/yarn-4.13.0.cjs`，通过 `./scripts/scrm/yarn` 调用 | 不需要全局 `yarn`；发布文件缺失时包装器直接报错 |
+| 网络 | 能访问 npm registry；拉取基础镜像时能访问镜像仓库 | 安装或 `docker compose up` 失败时需检查代理 / 镜像 |
+
+三个仓库自有入口都在 `scripts/scrm/` 下，并且都使用仓库内的 Yarn 版本工作，不依赖全局 `yarn`：
+
+| 入口 | 作用 |
+| --- | --- |
+| `./scripts/scrm/yarn` | 用仓库自带的 Yarn 4 运行任意命令，例如 `./scripts/scrm/yarn --version` |
+| `./scripts/scrm/compose` | 对 `docker-compose.dev.yml` 运行 Docker Compose，并在本地覆盖文件存在时自动加载 |
+| `./scripts/scrm/setup-local.sh` | 首次初始化（通常通过 `scrm:setup` 调用） |
 
 > 不依赖任何真实企业微信凭据或 sandbox 配置。企微接入是后续 P2/P4 的内容，
 > 本里程碑本地启动只用 PostgreSQL + Redis + Server + Worker + Front。
@@ -63,27 +71,80 @@
 
 ```bash
 # 首次初始化：安装依赖、准备 .env、拉起 PostgreSQL/Redis 并初始化数据库
-node .yarn/releases/yarn-4.13.0.cjs ./scripts/scrm/setup-local.sh
-# 或等价入口
-node .yarn/releases/yarn-4.13.0.cjs scrm:setup
+./scripts/scrm/yarn scrm:setup
 
 # 启动基础设施（PostgreSQL/Redis）+ Server + Worker + Front
-node .yarn/releases/yarn-4.13.0.cjs scrm:dev
+./scripts/scrm/yarn scrm:dev
 
 # 停止本地基础设施
-node .yarn/releases/yarn-4.13.0.cjs scrm:stop
+./scripts/scrm/yarn scrm:stop
 ```
 
-`scrm:dev` 等价于：先 `docker compose -f packages/twenty-docker/docker-compose.dev.yml up -d --wait`
-来保证数据库就绪，再 `yarn start` 启动前后端与 Worker。
+- `scrm:setup` 先校验 Docker 与 `.nvmrc` 要求的 Node 主版本，再执行 `install --immutable`、
+  按需生成 `packages/twenty-server/.env`、拉起基础设施并初始化数据库。
+- `scrm:dev` 先由 `./scripts/scrm/compose up -d --wait` 保证数据库与 Redis 健康，再通过
+  `./scripts/scrm/yarn start` 从**源码进程**启动 Server、Worker 和 Front。
+- `scrm:stop` 只停止基础设施容器，不删除数据卷；需要清空本地数据时用
+  `./scripts/scrm/compose down -v`。
+
+> `./scripts/scrm/yarn` 用仓库自带的 Yarn 执行脚本名，因此不需要全局 `yarn`。但在依赖尚未
+> 安装的全新检出上还没有安装状态，Yarn 此时无法按脚本名执行，需先直接运行
+> `./scripts/scrm/setup-local.sh`（它内部同样通过 `./scripts/scrm/yarn` 调用 Yarn）。
+
+### 运行时边界
+
+本地开发把“基础设施”和“应用进程”分开：
+
+- **Docker 只跑基础设施**：`packages/twenty-docker/docker-compose.dev.yml` 仅包含
+  `db`（PostgreSQL）与 `redis` 两个服务，端口映射到宿主机 `5432` / `6379`。它不含任何
+  应用容器，也不代表生产拓扑。
+- **应用从源码进程启动**：Server、Worker 与 Front 由 `scrm:dev` 直接在工作区运行，
+  改代码不需要重建镜像。
+- 应用容器镜像与部署形态属于后续任务，本阶段不提供生产部署清单。
+
+### 配置基础镜像来源（国内网络）
+
+两个基础设施镜像都是**完整镜像引用**，可以由团队替换为已批准的内网仓库或镜像缓存：
+
+```bash
+cp packages/twenty-docker/.env.scrm.example packages/twenty-docker/.env.scrm.local
+# 编辑 .env.scrm.local，把两个变量替换为当前网络可拉取的完整引用
+./scripts/scrm/yarn scrm:dev
+```
+
+- `packages/twenty-docker/.env.scrm.example` 是入库模板，说明 `SCRM_POSTGRES_IMAGE` 与
+  `SCRM_REDIS_IMAGE` 两个变量的含义；不提供覆盖文件时，Compose 使用默认值
+  `postgres:16` 与 `redis:7`。
+- `packages/twenty-docker/.env.scrm.local` 是本地文件，**已被 `.gitignore` 忽略**；
+  `./scripts/scrm/compose` 只在它存在时传给 Docker Compose。
+- 变量值是完整引用（包含仓库路径与 tag 或 digest），因此可以指向内网仓库。
+  **不要把凭据、企业专用仓库主机名或共享公开镜像地址写进仓库。**
+- CI 与生产必须使用组织自有的仓库或缓存引用，并锁定不可变 tag 或 digest；
+  本仓库不提供也不推荐任何具体镜像服务商。
+
+### 首次验证
+
+按顺序执行以下命令，全部通过说明本地入口自洽（不需要真实企微凭据）：
+
+```bash
+./scripts/scrm/yarn --version      # 使用仓库自带的 Yarn 4，无需全局 yarn
+./scripts/scrm/compose config      # 渲染 Compose 配置，确认镜像变量已生效
+./scripts/scrm/setup-local.sh      # 初始化依赖、.env 与数据库（全新检出用）
+./scripts/scrm/yarn scrm:dev       # 启动基础设施与源码进程
+```
+
+`./scripts/scrm/compose config` 的输出中应能看到 `image: postgres:16` 与 `image: redis:7`
+（或你在 `.env.scrm.local` 中指定的引用），且项目名为 `scrm-dev`。
 
 ### 常见启动失败排查
 
-- **`setup-local.sh` 报 Node 版本错误**：当前 Node 不是 24。用 nvm 切换到 node 24 后再跑：
-  `nvm install 24 && nvm use 24`，然后重新执行 setup。
+- **`scrm:setup` 报 Node 版本错误**：当前 Node 主版本与 `.nvmrc` 不一致。先切到 `.nvmrc`
+  指定的版本再重跑：`nvm install && nvm use`。
+- **找不到或无法执行 `./scripts/scrm/yarn`**：确认在仓库根目录执行，且该文件保留了可执行权限。
 - **`docker compose up` 失败**：确认 Docker 已启动；检查 `docker` 命令可用和当前用户有 Docker 权限。
-- **数据库未初始化**：重新跑 `scripts/scrm/setup-local.sh`（会执行 `nx run twenty-server:database:init`）。
-- **`yarn install --immutable`失败**：多为网络/镜像问题；修复网络后，其后再执行 setup。
+- **拉取基础镜像失败**：按上面的“配置基础镜像来源”设置 `.env.scrm.local`，指向当前网络可访问的镜像引用。
+- **数据库未初始化**：重新跑 `./scripts/scrm/yarn scrm:setup`（会执行 `nx run twenty-server:database:init`）。
+- **`install --immutable` 失败**：多为网络 / 镜像问题；修复网络后重新执行 setup。
 
 ## 验证本地是“真的可用”
 
@@ -91,16 +152,16 @@ node .yarn/releases/yarn-4.13.0.cjs scrm:stop
 
 1. `twenty-front` 页面可打开，Server 与 Worker 进程无报错。
 2. 能登录本地账号（"Continue with Email" + 预填凭据）。
-3. 领域包测试通过：`yarn nx run scrm-domain:test`、`:typecheck`、`:lint` 均通过。
+3. 领域包测试通过：`./scripts/scrm/yarn nx run scrm-domain:test`、`:typecheck`、`:lint` 均通过。
 4. 数据库里能创建 Workspace，且两个不同 Workspace 的数据可隔离（多租户验收项，属后续阶段逐步加固）。
 
 ## 测试入口
 
 - 单个测试文件：`npx jest path/to/file.spec.ts --config=packages/scrm-domain/jest.config.mjs`
-- 领域包全部测试：`yarn nx run scrm-domain:test`
-- 类型检查 / Lint：`yarn nx run scrm-domain:typecheck`、`yarn nx run scrm-domain:lint`
+- 领域包全部测试：`./scripts/scrm/yarn nx run scrm-domain:test`
+- 类型检查 / Lint：`./scripts/scrm/yarn nx run scrm-domain:typecheck`、`./scripts/scrm/yarn nx run scrm-domain:lint`
 
-> 注意：改变或编辑 `packages/twenty-shared` 后需先 `yarn nx build twenty-shared --skip-nx-cache`，
+> 注意：改变或编辑 `packages/twenty-shared` 后需先 `./scripts/scrm/yarn nx build twenty-shared --skip-nx-cache`，
 > 再在依赖它的包上做验证，否则可能看到陈旧结果。
 
 ## 复现耗时

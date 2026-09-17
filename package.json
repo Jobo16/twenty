@@ -60,8 +60,8 @@
   "nx": {},
   "scripts": {
     "scrm:setup": "bash scripts/scrm/setup-local.sh",
-    "scrm:dev": "docker compose -f packages/twenty-docker/docker-compose.dev.yml up -d --wait && yarn start",
-    "scrm:stop": "docker compose -f packages/twenty-docker/docker-compose.dev.yml down",
+    "scrm:dev": "./scripts/scrm/compose up -d --wait && ./scripts/scrm/yarn start",
+    "scrm:stop": "./scripts/scrm/compose down",
     "docs:generate": "tsx packages/twenty-docs/scripts/generate-docs-json.ts",
     "docs:generate-navigation-template": "tsx packages/twenty-docs/scripts/generate-navigation-template.ts",
     "docs:generate-paths": "tsx packages/twenty-docs/scripts/generate-documentation-paths.ts",

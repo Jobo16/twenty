@@ -1,4 +1,9 @@
 **/**/.env
+
+# Local image overrides for the SCRM development infrastructure; image
+# references only, never credentials. Template: packages/twenty-docker/.env.scrm.example
+/packages/twenty-docker/.env.scrm.local
+
 .DS_Store
 /.idea
 .claude/*
