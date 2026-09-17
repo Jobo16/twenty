@@ -166,6 +166,7 @@ export class CoreWorkflowMutationWorkspaceService {
     await this.coreWorkflowVersionWriteService.writeContentAndMirror({
       workspaceId,
       coreWorkflowVersionId: initialDraft.id,
+      expectedVersion: initialDraft,
       trigger,
       steps,
     });
