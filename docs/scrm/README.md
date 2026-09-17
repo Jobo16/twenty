@@ -34,3 +34,4 @@
 - [上游代码使用策略](upstream-policy.md)
 - [Agent 分发任务 Prompt](agent-prompts.md)
 - [开发规范](development-standards.md)
+- [任务看板与可分发 Prompt](task-management.md)
