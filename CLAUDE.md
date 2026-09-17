@@ -11,8 +11,8 @@ For all new or changed SCRM functionality, read and follow
 It defines the required module boundaries, tenant isolation, historical fact
 rules, WeCom callback handling, tests, and reviewable delivery workflow.
 
-For repository-wide documentation, issue/PR workflow, automation boundaries,
-and GitHub configuration, also read
+For repository-wide documentation, shared-branch workflow, automation boundaries,
+deployment topology, and GitHub configuration, also read
 [`docs/scrm/repository-operations.md`](docs/scrm/repository-operations.md).
 
 In particular: keep `packages/scrm-domain` free of framework, database, HTTP,
@@ -21,12 +21,19 @@ never recalculate historical reports from mutable current customer fields.
 
 ## SCRM delivery ownership
 
-- The repository owner, including Codex when it implements a change directly,
-  validates, commits, and pushes the change straight to `main`. Do not create
-  an Issue or PR merely to review the owner's own work.
-- Work delegated to another Agent uses the Issue claim and Draft PR workflow
-  in `docs/scrm/agent-issue-prompt.md`. The owner reviews and integrates that
-  work after it is delivered.
+- All active SCRM development happens in the repository root on the shared
+  `test` branch. `main` contains only changes that have been accepted from
+  `test`.
+- The task row in [`docs/scrm/task-management.md`](docs/scrm/task-management.md)
+  is the coordination lock. Before editing, an Agent marks its row as
+  `进行中` with its name; after verification it records the result and marks
+  the row `待验收`.
+- Do not create a feature branch, worktree, GitHub Issue, or PR for internal
+  SCRM work. Do not change branches, reset, clean, stash, force-push, or
+  commit another task's files in the shared directory.
+- Agents leave their scoped changes and validation record for the repository
+  owner or Codex to review. The owner commits and pushes cohesive accepted
+  changes to `test`, then promotes a verified `test` revision to `main`.
 
 ## House rules
 

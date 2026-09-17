@@ -92,3 +92,9 @@ Workspace 数据｜PostgreSQL｜Redis/BullMQ｜对象存储｜企微 API
 - `permissions/` 客户访问策略
 
 每个子域以 `*.ts` 暴露少而稳的纯函数和类型，测试放在同目录 `*.spec.ts`。验证与本地启动见 [本地开发说明](local-development.md)。
+
+## 运行与部署
+
+第一阶段是模块化单体，不拆为多个独立代码仓库或独立领域服务。运行时按职责分开：Server 处理 HTTP、认证和同步入口，Worker 消费 BullMQ 队列与异步任务；两者共享同一个版本化应用镜像和同一套领域代码。
+
+本地只把 PostgreSQL 16 与 Redis 7 放进 Docker，应用进程直接从源码运行。测试和生产各使用单台主机的 Docker Compose 运行反向代理、Server、Worker 和一次性迁移，连接受管 PostgreSQL 16、Redis 7 与对象存储。数据服务不随应用 Compose 启动，迁移在新版本应用启动前只执行一次。详细步骤见[部署拓扑与发布流程](deployment.md)。

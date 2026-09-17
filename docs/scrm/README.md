@@ -11,7 +11,7 @@
 - **产品定位与关系**：为什么从 Twenty 分化，见[本地开发说明](local-development.md#这个项目是什么)。
 - **模块地图**：[架构的模块边界](architecture.md#模块边界模块地图)。
 - **当前优先级**：[开发待办](backlog.md)。
-- **本机运行**：`node .yarn/releases/yarn-4.13.0.cjs scrm:setup` → `scrm:dev` → `scrm:stop`。
+- **本机运行**：`./scripts/scrm/setup-local.sh` → `./scripts/scrm/yarn scrm:dev` → `./scripts/scrm/yarn scrm:stop`。
 
 本地使用 Node.js **24**。首次运行 `./scripts/scrm/setup-local.sh`（即 `scrm:setup`）安装依赖、准备 `.env` 并初始化数据库；之后运行同一 Yarn 入口的 `scrm:dev` 启动 PostgreSQL、Redis、Server、Worker 和 Front；`scrm:stop` 停止基础设施。全部入口、前置条件与失败排查见[本地开发说明](local-development.md#一次启动)。
 
@@ -34,10 +34,10 @@
 - [租户、成员与权限领域规则](permissions.md)
 - [开发待办与优先级](backlog.md)
 - [上游代码使用策略](upstream-policy.md)
-- [Agent 领取 Issue 的统一提示词](agent-issue-prompt.md)
 - [开发规范](development-standards.md)
-- [任务看板与可分发 Prompt](task-management.md)
+- [任务看板](task-management.md)
 - [仓库运行方式](repository-operations.md)
+- [部署拓扑与发布流程](deployment.md)
 
-`agent-prompts.md` 保留早期任务拆分记录，仅供追溯；实际分发以任务看板、GitHub Issue 和
-统一提示词为准。
+日常开发统一在共享的 `test` 分支进行。任务看板中的状态文字是唯一认领记录；内部协作不使用
+Issue、PR、功能分支或 worktree。

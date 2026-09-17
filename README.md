@@ -10,22 +10,22 @@ Twenty 是初始技术底座，不是兼容目标。本仓库不例行合并上�
 ## 当前状态
 
 项目处于基础能力建设阶段，尚未提供可投入生产使用的企微接入、销售工作台或报表界面。
-当前已建立独立的 SCRM 领域内核、本地开发入口、基础校验，以及面向 Agent 的 Issue 与
-PR 协作方式。
+当前已建立独立的 SCRM 领域内核、租户与权限规则、本地开发入口和基础校验。首期部署采用
+单机 Docker Compose 承载应用，数据库、Redis 与对象存储使用受管服务。
 
 ## 本地开始
 
 要求 Node.js 24 和正在运行的 Docker。首次运行：
 
 ```bash
-node .yarn/releases/yarn-4.13.0.cjs scrm:setup
-node .yarn/releases/yarn-4.13.0.cjs scrm:dev
+./scripts/scrm/setup-local.sh
+./scripts/scrm/yarn scrm:dev
 ```
 
 停止本地基础设施：
 
 ```bash
-node .yarn/releases/yarn-4.13.0.cjs scrm:stop
+./scripts/scrm/yarn scrm:stop
 ```
 
 完整的前置条件、运行方式和排查路径见[本地开发说明](docs/scrm/local-development.md)。
@@ -38,15 +38,16 @@ node .yarn/releases/yarn-4.13.0.cjs scrm:stop
 - [仓库运行方式](docs/scrm/repository-operations.md)
 - [开发待办与优先级](docs/scrm/backlog.md)
 - [任务看板](docs/scrm/task-management.md)
-- [Agent 领取 Issue 的统一提示词](docs/scrm/agent-issue-prompt.md)
+- [部署拓扑与发布流程](docs/scrm/deployment.md)
 
 ## 协作与交付
 
-工作从可领取的 GitHub Issue 开始。Agent 必须先认领 Issue、建立认领锁，再在独立
-worktree 中实现并提交 Draft PR。SCRM 负责人负责任务拆分、冲突处理、审查和合入。
-详细流程见[贡献说明](.github/CONTRIBUTING.md)和[开发规范](docs/scrm/development-standards.md)。
+日常开发统一在共享的 `test` 分支进行。开始任务前在[任务看板](docs/scrm/task-management.md)
+把对应行标记为进行中；完成后记录验证结果，交由负责人审查、提交和推进到 `main`。不为内部
+协作创建 Issue、PR、功能分支或 worktree。详细规则见[贡献说明](.github/CONTRIBUTING.md)和
+[开发规范](docs/scrm/development-standards.md)。
 
-不要在 Issue、PR、测试夹具或日志中提交企业微信密钥、客户正文、手机号或生产数据。
+不要在任务记录、测试夹具或日志中提交企业微信密钥、客户正文、手机号或生产数据。
 安全问题请遵循[安全策略](.github/SECURITY.md)。
 
 ## 来源与许可

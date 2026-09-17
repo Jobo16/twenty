@@ -44,8 +44,8 @@
 - **P5**：管理看板、漏斗与稳定报表事实。
 - **P6**：会话存档、隐私与 AI 证据边界。
 
-完整的父 Issue 可在[开发待办](backlog.md)中查看。只有任务看板标记为当前可分发的工作才会
-创建 `agent:ready` Issue；领取方式见[统一 Agent 提示词](agent-issue-prompt.md)。
+完整优先级见[开发待办](backlog.md)，当前可开始的工作见[任务看板](task-management.md)。所有人
+在仓库根目录的共享 `test` 分支协作，任务行的状态文字记录领取和验收，不使用 Issue、PR 或 worktree。
 
 ## 本地开发前提条件
 
@@ -100,7 +100,8 @@
   应用容器，也不代表生产拓扑。
 - **应用从源码进程启动**：Server、Worker 与 Front 由 `scrm:dev` 直接在工作区运行，
   改代码不需要重建镜像。
-- 应用容器镜像与部署形态属于后续任务，本阶段不提供生产部署清单。
+- 测试与生产由单机 Docker Compose 分别运行 Server 与 Worker，并连接受管 PostgreSQL、Redis
+  与对象存储；具体边界和发布顺序见[部署拓扑](deployment.md)。
 
 ### 配置基础镜像来源（国内网络）
 
