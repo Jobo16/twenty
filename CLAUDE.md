@@ -4,6 +4,17 @@ Twenty is an open-source CRM — an Nx / Yarn 4 monorepo. Main packages: `twenty
 
 Match the surrounding code — the adjacent files in the directory you are editing beat any written rule, including for file naming, which varies by area.
 
+## SCRM rules
+
+For all new or changed SCRM functionality, read and follow
+[`docs/scrm/development-standards.md`](docs/scrm/development-standards.md).
+It defines the required module boundaries, tenant isolation, historical fact
+rules, WeCom callback handling, tests, and reviewable delivery workflow.
+
+In particular: keep `packages/scrm-domain` free of framework, database, HTTP,
+and WeCom SDK dependencies; derive tenant and authorization server-side; and
+never recalculate historical reports from mutable current customer fields.
+
 ## House rules
 
 Where this repo differs from your defaults:
