@@ -1,6 +1,8 @@
 # SCRM 任务看板
 
-这是 Agent 分发和 PR 验收的唯一入口。我会只在这里放入**当前可以同时开工、且只依赖已合入 `main` 的任务**。不满足前置条件的工作只保留在 [开发待办](backlog.md)，不会提前生成可分发 Prompt。
+这是 Issue 编排和 PR 验收的入口。我会只为**当前可以同时开工、且只依赖已合入 `main` 的任务**创建 GitHub Issue。不满足前置条件的工作只保留在 [开发待办](backlog.md)，不会提前创建可领取 Issue。
+
+分发时，你只需要把 [统一 Agent 提示词](agent-issue-prompt.md) 原样发给 Agent，并把其中的 `ISSUE_NUMBER` 替换为对应编号。Agent 会自行领取、建立认领锁、开发并提交 Draft PR；我负责 Issue 范围、认领冲突、PR 审查、验收和下一批任务。
 
 ## 当前分发队列
 
@@ -8,7 +10,7 @@
 | --- | --- | --- | --- |
 | T01 | 待验收 | Codex | [P0 PR #11](https://github.com/Jobo16/twenty/pull/11)，SCRM CI 已通过 |
 
-当前没有可再分配给 Agent 的任务。P0 进入 `main` 后，我会基于新的稳定基线生成下一批互不影响的任务和 Prompt。
+当前没有可再分配给 Agent 的任务。P0 进入 `main` 后，我会基于新的稳定基线创建下一批互不影响的 GitHub Issue。
 
 ## T01：修复 P0 基建并让 CI 成为可信门槛
 
@@ -33,7 +35,8 @@ git diff --check origin/main...HEAD
 - 每项新任务从已合入的 `main` 创建独立分支和 worktree，不引用其他未合入 PR、携带基线提交或共享工作区的未提交文件。
 - 同一批任务拥有不重叠的目录；公共出口、根配置、迁移和共享测试配置由单独集成任务处理。
 - Agent 交付 Draft PR，描述中必须包含关联 Issue、提交 SHA、修改文件、实际验证、配置/数据库影响和未覆盖风险。
-- 我审查并更新本看板后，才会把下一批 Prompt 写入这里供分发。
+- Agent 通过 `agent:ready` → `agent:claimed` 领取任务；认领留言的先后决定任务归属。具体操作见 [统一 Agent 提示词](agent-issue-prompt.md)。
+- 我审查并更新 Issue、标签与本看板后，才会创建下一批可领取 Issue。
 
 ## 当前 PR 验收队列
 
@@ -45,4 +48,4 @@ git diff --check origin/main...HEAD
 | [#10](https://github.com/Jobo16/twenty/pull/10) | P6 会话存档与 AI 证据 | 以新 main rebase，复核对外拒绝原因是否泄露跨租户信息 |
 | [#12](https://github.com/Jobo16/twenty/pull/12) | P4 侧边栏与任务触发 | 以新 main rebase，移除共享 `src/index.ts` 改动 |
 
-[P0 PR #8](https://github.com/Jobo16/twenty/pull/8) 是较早快照，不作为交付目标；T01 验收后由我关闭，保留 PR #11。
+[P0 PR #8](https://github.com/Jobo16/twenty/pull/8) 是已关闭的较早快照；保留 PR #11 作为 P0 验收入口。
