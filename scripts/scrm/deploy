@@ -1,0 +1,78 @@
+#!/usr/bin/env bash
+#
+# Runs the first-stage SCRM deployment Compose file. The host-specific .env is
+# intentionally outside version control; use SCRM_DEPLOY_ENV_FILE to point at a
+# secret-managed file when it is not beside the Compose file.
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+deployment_dir="$repo_root/packages/twenty-docker/scrm"
+compose_file="$deployment_dir/compose.yml"
+environment_file="${SCRM_DEPLOY_ENV_FILE:-$deployment_dir/.env}"
+
+action="${1:-}"
+if [[ -z "$action" ]]; then
+  cat >&2 <<'USAGE'
+Usage: ./scripts/scrm/deploy <config|migrate|up|deploy|down|logs|ps> [service ...]
+
+Set SCRM_DEPLOY_ENV_FILE to use a host-specific environment file outside the
+repository checkout. Copy packages/twenty-docker/scrm/.env.example before the
+first deployment.
+USAGE
+  exit 2
+fi
+shift
+
+command -v docker >/dev/null 2>&1 || {
+  echo "Docker is required." >&2
+  exit 1
+}
+
+if [[ ! -f "$environment_file" ]]; then
+  echo "Deployment environment file not found: $environment_file" >&2
+  echo "Copy $deployment_dir/.env.example to $deployment_dir/.env first." >&2
+  exit 1
+fi
+
+compose() {
+  SCRM_RUNTIME_ENV_FILE="$environment_file" docker compose \
+    --env-file "$environment_file" \
+    --project-directory "$deployment_dir" \
+    --file "$compose_file" \
+    "$@"
+}
+
+case "$action" in
+  config)
+    compose config -q
+    ;;
+  migrate)
+    compose config -q
+    compose --profile migration run --rm migrate
+    ;;
+  up)
+    compose pull server worker proxy
+    compose up --detach --remove-orphans server worker proxy
+    ;;
+  deploy)
+    compose config -q
+    compose pull server worker proxy
+    compose --profile migration run --rm migrate
+    compose up --detach --remove-orphans server worker proxy
+    compose ps
+    ;;
+  down)
+    compose down "$@"
+    ;;
+  logs)
+    compose logs --tail=200 --follow "$@"
+    ;;
+  ps)
+    compose ps "$@"
+    ;;
+  *)
+    echo "Unknown deployment action: $action" >&2
+    exit 2
+    ;;
+esac

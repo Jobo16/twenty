@@ -26,11 +26,11 @@ reverse proxy
 managed PostgreSQL 16 · managed Redis 7 · managed object storage
 ```
 
-- 反向代理在同一主机处理 TLS、静态前端和到 Server 的转发；Worker 不暴露公网端口。
+- 首期 Compose 使用 Caddy 作为反向代理，在同一主机处理 TLS、静态前端和到 Server 的转发；Worker 不暴露公网端口。
 - Server、Worker 和迁移使用同一个不可变应用镜像，通过不同命令启动，避免运行时代码漂移。
 - Compose 必须通过 `SCRM_APP_IMAGE` 接收完整镜像引用（优先 digest）；镜像由受控构建流程推送至企业私有仓库或批准的缓存，仓库中不写具体镜像服务商地址或凭据。
 - 连接串、对象存储端点、访问凭据和企业微信密钥由部署环境注入。入库文件只能提供变量名和无密钥示例。
-- 所有服务使用健康检查、重启策略和结构化日志；应用实例不保存唯一业务状态。
+- Server 使用健康检查，所有长运行服务使用重启策略；Caddy 输出 JSON 日志，应用实例不保存唯一业务状态。
 
 ## 迁移与发布顺序
 
@@ -45,9 +45,24 @@ managed PostgreSQL 16 · managed Redis 7 · managed object storage
 
 ## 配置与职责边界
 
-- `DATABASE_URL` 指向受管 PostgreSQL；版本要求 PostgreSQL 16。
+- `PG_DATABASE_URL` 指向受管 PostgreSQL；版本要求 PostgreSQL 16。
 - Redis / BullMQ 配置指向受管 Redis 7，键和队列名必须保留租户隔离前缀。
 - 对象存储用于附件、会话媒体和导出文件，路径以租户或 Workspace 为首段，下载时重新鉴权。
 - 测试与生产的配置文件、秘密和正式发布操作不保存在源码仓库。仓库提供 Compose 模板、变量示例、迁移命令和验证步骤。
 
 实现生产 Compose 时以此文档为验收口径；具体目录与任务状态见[任务看板](task-management.md)。
+
+## 仓库内实现
+
+无密钥的 Compose 定义位于 `packages/twenty-docker/scrm/`，应用镜像由既有
+`packages/twenty-docker/twenty/Dockerfile` 的 `twenty` target 构建。部署主机将受控构建流程产出的
+镜像 digest 写入本机 `.env` 后，从仓库根目录执行：
+
+```bash
+./scripts/scrm/deploy config
+./scripts/scrm/deploy migrate
+./scripts/scrm/deploy up
+```
+
+`./scripts/scrm/deploy deploy` 按相同顺序完成拉取、迁移和启动。详细环境变量、回退边界和运维命令见
+[`packages/twenty-docker/scrm/README.md`](../../packages/twenty-docker/scrm/README.md)。

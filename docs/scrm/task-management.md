@@ -19,7 +19,7 @@
 | T01 | 已完成 | Codex | `packages/scrm-domain/**`、基础文档与 SCRM CI | 领域内核、历史事实规则、租户成员与权限规则已进入 `main`。|
 | T02 | 已完成 | Codex | `scripts/scrm/**`、`packages/twenty-docker/docker-compose.dev.yml`、本地开发文档 | 本地以 Docker 运行 PostgreSQL 16 和 Redis 7，应用由源码进程运行。|
 | T03 | 已完成 | Codex | 协作与运行文档、GitHub 协作模板 | 已切换为共享 `test` 分支和任务看板，旧 Issue / PR / worktree 流程已移除。|
-| T04 | 待办 | — | `packages/twenty-docker/scrm/**`、相关部署脚本与测试 | 交付单机生产 Compose：代理、Server、Worker、一次性迁移；只连接受管 PostgreSQL、Redis、对象存储，不启动数据库或 Redis 容器。详见[部署拓扑](deployment.md)。|
+| T04 | 已完成 | Codex | `packages/twenty-docker/scrm/**`、相关部署脚本与测试 | 已交付单机 Compose、Caddy、显式迁移脚本、无密钥模板与拓扑校验；已验证 `verify-production-compose.sh`、部署模板配置、脚本语法和文档链接。未连接测试或生产受管服务。|
 
 ## 使用方式
 

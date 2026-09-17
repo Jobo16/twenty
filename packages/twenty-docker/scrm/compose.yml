@@ -1,0 +1,78 @@
+name: scrm
+
+x-application-environment: &application-environment
+  NODE_ENV: production
+  NODE_PORT: "3000"
+
+x-application: &application
+  image: ${SCRM_APP_IMAGE:?Set SCRM_APP_IMAGE to the approved application image digest.}
+  env_file:
+    - path: ${SCRM_RUNTIME_ENV_FILE:-.env}
+      required: true
+  init: true
+  security_opt:
+    - no-new-privileges:true
+
+services:
+  migrate:
+    <<: *application
+    profiles: [migration]
+    entrypoint: ["/bin/sh", "/opt/scrm/migrate.sh"]
+    command: []
+    environment:
+      <<: *application-environment
+    volumes:
+      - ./migrate.sh:/opt/scrm/migrate.sh:ro
+    restart: "no"
+
+  server:
+    <<: *application
+    entrypoint: []
+    command: ["node", "dist/main"]
+    environment:
+      <<: *application-environment
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    expose:
+      - "3000"
+    healthcheck:
+      test: ["CMD-SHELL", "curl --fail --silent http://localhost:3000/healthz >/dev/null"]
+      interval: 10s
+      timeout: 5s
+      retries: 12
+      start_period: 20s
+    restart: unless-stopped
+
+  worker:
+    <<: *application
+    entrypoint: []
+    command: ["node", "dist/queue-worker/queue-worker"]
+    environment:
+      <<: *application-environment
+      DISABLE_DB_MIGRATIONS: "true"
+      DISABLE_CRON_JOBS_REGISTRATION: "true"
+    restart: unless-stopped
+
+  proxy:
+    image: ${SCRM_PROXY_IMAGE:?Set SCRM_PROXY_IMAGE to the approved reverse-proxy image reference.}
+    environment:
+      SCRM_PUBLIC_HOST: ${SCRM_PUBLIC_HOST:?Set SCRM_PUBLIC_HOST to the public DNS name.}
+      SCRM_TLS_EMAIL: ${SCRM_TLS_EMAIL:?Set SCRM_TLS_EMAIL to the certificate contact email.}
+    depends_on:
+      server:
+        condition: service_healthy
+    ports:
+      - "80:80"
+      - "443:443"
+      - "443:443/udp"
+    volumes:
+      - ./Caddyfile:/etc/caddy/Caddyfile:ro
+      - caddy-data:/data
+      - caddy-config:/config
+    security_opt:
+      - no-new-privileges:true
+    restart: unless-stopped
+
+volumes:
+  caddy-data:
+  caddy-config:

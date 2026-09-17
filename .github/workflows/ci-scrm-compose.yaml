@@ -1,0 +1,32 @@
+name: CI SCRM Compose
+
+on:
+  pull_request:
+    paths:
+      - 'packages/twenty-docker/scrm/**'
+      - 'scripts/scrm/deploy'
+      - 'scripts/scrm/verify-production-compose.sh'
+      - '.github/workflows/ci-scrm-compose.yaml'
+  push:
+    branches: [main, test]
+    paths:
+      - 'packages/twenty-docker/scrm/**'
+      - 'scripts/scrm/deploy'
+      - 'scripts/scrm/verify-production-compose.sh'
+      - '.github/workflows/ci-scrm-compose.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 10
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Validate production Compose topology
+        run: ./scripts/scrm/verify-production-compose.sh
