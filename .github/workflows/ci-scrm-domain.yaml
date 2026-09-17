@@ -1,0 +1,40 @@
+name: CI SCRM Domain
+
+on:
+  pull_request:
+    paths:
+      - 'package.json'
+      - 'yarn.lock'
+      - 'nx.json'
+      - 'packages/scrm-domain/**'
+      - '.github/workflows/ci-scrm-domain.yaml'
+  push:
+    branches: [main]
+    paths:
+      - 'package.json'
+      - 'yarn.lock'
+      - 'nx.json'
+      - 'packages/scrm-domain/**'
+      - '.github/workflows/ci-scrm-domain.yaml'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: ${{ github.workflow }}-${{ github.ref }}
+  cancel-in-progress: true
+
+jobs:
+  verify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 20
+    steps:
+      - uses: actions/checkout@34e114876b0b11c390a56381ad16ebd13914f8d5
+      - name: Install dependencies
+        uses: ./.github/actions/yarn-install
+      - name: Typecheck
+        run: yarn nx run scrm-domain:typecheck
+      - name: Test
+        run: yarn nx run scrm-domain:test
+      - name: Lint
+        run: yarn nx run scrm-domain:lint

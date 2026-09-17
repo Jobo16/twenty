@@ -1,0 +1,13 @@
+{
+  "name": "scrm-domain",
+  "$schema": "../../node_modules/nx/schemas/project-schema.json",
+  "sourceRoot": "packages/scrm-domain/src",
+  "projectType": "library",
+  "tags": ["scope:scrm", "type:domain"],
+  "targets": {
+    "typecheck": {},
+    "test": {},
+    "lint": { "options": {}, "configurations": { "fix": {} } },
+    "fmt": { "options": { "files": "src" }, "configurations": { "fix": {} } }
+  }
+}

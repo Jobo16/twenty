@@ -1,3 +1,6 @@
+> [!IMPORTANT]
+> This repository is the foundation of an independent, multi-tenant SCRM product for the Chinese market. Twenty is the initial codebase, not a compatibility target. Product architecture, WeCom integration, permissions, reporting, and delivery plans live in [`docs/scrm`](./docs/scrm/README.md).
+
 <p align="center">
   <a href="https://www.twenty.com">
     <img src="./packages/twenty-website/public/images/core/logo.svg" width="100px" alt="Twenty logo" />
