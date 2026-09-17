@@ -1,0 +1,25 @@
+#!/usr/bin/env bash
+#
+# Runs Docker Compose against the SCRM development infrastructure file.
+#
+# The developer's local image override is applied only when it exists: the image
+# defaults live in the Compose file, so a missing override must not turn into a
+# Compose error about a missing env file.
+
+set -euo pipefail
+
+repo_root="$(cd "$(dirname "${BASH_SOURCE[0]}")/../.." && pwd)"
+
+compose_file="$repo_root/packages/twenty-docker/docker-compose.dev.yml"
+local_overrides="$repo_root/packages/twenty-docker/.env.scrm.local"
+
+command -v docker >/dev/null 2>&1 || {
+  echo "Docker is required." >&2
+  exit 1
+}
+
+if [[ -f "$local_overrides" ]]; then
+  exec docker compose --env-file "$local_overrides" --file "$compose_file" "$@"
+fi
+
+exec docker compose --file "$compose_file" "$@"

@@ -1,16 +1,22 @@
 # Development infrastructure services only (Postgres + Redis).
 # Use this when developing locally against the source code.
 #
-# Usage:
-#   docker compose -f docker-compose.dev.yml up -d
-#   docker compose -f docker-compose.dev.yml down       # stop
-#   docker compose -f docker-compose.dev.yml down -v    # stop + wipe data
+# The project name is SCRM-specific so this stack stays separate from other
+# Compose projects on the same machine.
+#
+# Both images are overridable so a team can point them at an approved private
+# registry or cache. See .env.scrm.example; defaults match the official images.
+#
+# Usage (from the repository root):
+#   ./scripts/scrm/yarn scrm:dev      # start infrastructure, then run the apps
+#   ./scripts/scrm/yarn scrm:stop     # stop
+#   ./scripts/scrm/compose down -v    # stop + wipe local data
 
-name: twenty-dev
+name: scrm-dev
 
 services:
   db:
-    image: postgres:16
+    image: "${SCRM_POSTGRES_IMAGE:-postgres:16}"
     volumes:
       - dev-db-data:/var/lib/postgresql/data
     ports:
@@ -27,7 +33,7 @@ services:
     restart: unless-stopped
 
   redis:
-    image: redis:7
+    image: "${SCRM_REDIS_IMAGE:-redis:7}"
     ports:
       - "6379:6379"
     command: ["--maxmemory-policy", "noeviction"]
