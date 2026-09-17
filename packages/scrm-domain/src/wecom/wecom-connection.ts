@@ -49,7 +49,11 @@ export function createWecomConnectionRegistry(
 ): WecomConnectionRegistry {
   return inputs.reduce<WecomConnectionRegistry>(
     (registry, input) => registerWecomConnection(registry, input).registry,
-    { byConnectionId: new Map(), byCorpId: new Map(), byWorkspaceId: new Map() },
+    {
+      byConnectionId: new Map(),
+      byCorpId: new Map(),
+      byWorkspaceId: new Map(),
+    },
   );
 }
 

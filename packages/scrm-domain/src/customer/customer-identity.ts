@@ -18,10 +18,7 @@ export type CustomerIdentity = {
 };
 
 export function customerIdentityKey(
-  identity: Pick<
-    CustomerIdentity,
-    'connectionId' | 'provider' | 'externalId'
-  >,
+  identity: Pick<CustomerIdentity, 'connectionId' | 'provider' | 'externalId'>,
 ): string {
   if (identity.externalId.length === 0) {
     throw new Error('externalId is required');

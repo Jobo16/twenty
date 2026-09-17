@@ -36,11 +36,7 @@ describe('transitionSalesTask', () => {
     };
 
     expect(() =>
-      transitionSalesTask(
-        completed,
-        'IN_PROGRESS',
-        '2026-09-17T03:00:00.000Z',
-      ),
+      transitionSalesTask(completed, 'IN_PROGRESS', '2026-09-17T03:00:00.000Z'),
     ).toThrow('cannot transition task from COMPLETED to IN_PROGRESS');
   });
 });

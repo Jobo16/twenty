@@ -71,9 +71,7 @@ export function transitionCustomerOwner(
     }
   }
 
-  if (
-    input.attributionSnapshot.ownerMemberId !== input.nextOwnerMemberId
-  ) {
+  if (input.attributionSnapshot.ownerMemberId !== input.nextOwnerMemberId) {
     throw new Error('attribution owner must match the next owner');
   }
 
